@@ -3,14 +3,14 @@
 #include "driver/mcpwm.h"
 #include "motor.h"
 
-#define MOTOR_FW_R_A 6
-#define MOTOR_FW_R_B 7
-#define MOTOR_FW_L_A 15
-#define MOTOR_FW_L_B 16
-#define MOTOR_BW_R_A 35
-#define MOTOR_BW_R_B 36
-#define MOTOR_BW_L_A 37
-#define MOTOR_BW_L_B 38
+#define MOTOR_F_R_A 6
+#define MOTOR_F_R_B 7
+#define MOTOR_F_L_A 15
+#define MOTOR_F_L_B 16
+#define MOTOR_B_R_A 35
+#define MOTOR_B_R_B 36
+#define MOTOR_B_L_A 38
+#define MOTOR_B_L_B 37
 #define MOTOR_PWM 9
 
 // #define MOTOR_FW_R_PWM 9
@@ -21,27 +21,27 @@
 
 // PWM Configuration
 #define PWM_FREQUENCY 1000 // 1kHz PWM frequency
-#define PWM_DUTY_CYCLE 50  // 75% duty cycle for speed control
+#define PWM_DUTY_CYCLE 75  // 75% duty cycle for speed control
 
 void setup_motor_gpio(){
 
-    esp_rom_gpio_pad_select_gpio(MOTOR_FW_L_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_FW_L_B);
-    esp_rom_gpio_pad_select_gpio(MOTOR_FW_R_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_FW_R_B);
-    esp_rom_gpio_pad_select_gpio(MOTOR_BW_L_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_BW_L_B);
-    esp_rom_gpio_pad_select_gpio(MOTOR_BW_R_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_BW_R_B);
+    esp_rom_gpio_pad_select_gpio(MOTOR_F_L_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_F_L_B);
+    esp_rom_gpio_pad_select_gpio(MOTOR_F_R_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_F_R_B);
+    esp_rom_gpio_pad_select_gpio(MOTOR_B_L_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_B_L_B);
+    esp_rom_gpio_pad_select_gpio(MOTOR_B_R_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_B_R_B);
 
-    gpio_set_direction(MOTOR_FW_R_B, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_FW_R_B , GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_FW_L_A , GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_FW_L_B , GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_BW_R_A , GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_BW_R_B , GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_BW_L_A , GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_BW_L_B , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_F_R_A , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_F_R_B , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_F_L_A , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_F_L_B , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_B_R_A , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_B_R_B , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_B_L_A , GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_B_L_B , GPIO_MODE_OUTPUT);
 }
 
 void setup_mcpwm() {
@@ -65,14 +65,83 @@ void control_direction(int x, int y){
     
 }
 
+void move_forward()
+{
+    gpio_set_level(MOTOR_B_L_A, 1);
+    gpio_set_level(MOTOR_B_L_B, 0);
+
+    gpio_set_level(MOTOR_B_R_A, 1);
+    gpio_set_level(MOTOR_B_R_B, 0);
+
+    gpio_set_level(MOTOR_F_L_A, 1);
+    gpio_set_level(MOTOR_F_L_B, 0);
+
+    gpio_set_level(MOTOR_F_R_A, 1);
+    gpio_set_level(MOTOR_F_R_B, 0);
+}
+
+void move_backward()
+{
+    gpio_set_level(MOTOR_B_L_A, 0);
+    gpio_set_level(MOTOR_B_L_B, 1);
+
+    gpio_set_level(MOTOR_B_R_A, 0);
+    gpio_set_level(MOTOR_B_R_B, 1);
+    
+    gpio_set_level(MOTOR_F_L_A, 0);
+    gpio_set_level(MOTOR_F_L_B, 1);
+    
+    gpio_set_level(MOTOR_F_R_A, 0);
+    gpio_set_level(MOTOR_F_R_B, 1);
+}
+
+void move_right()
+{
+    update_speed(100); 
+
+    gpio_set_level(MOTOR_B_L_A, 0);
+    gpio_set_level(MOTOR_B_L_B, 1);
+
+    gpio_set_level(MOTOR_B_R_A, 1);
+    gpio_set_level(MOTOR_B_R_B, 0);
+
+    gpio_set_level(MOTOR_F_L_A, 1);
+    gpio_set_level(MOTOR_F_L_B, 0);
+    
+    gpio_set_level(MOTOR_F_R_A, 0);
+    gpio_set_level(MOTOR_F_R_B, 1);
+
+    update_speed(PWM_DUTY_CYCLE); 
+}
+
+void move_left()
+{
+    update_speed(100); 
+
+    gpio_set_level(MOTOR_B_L_A, 1);
+    gpio_set_level(MOTOR_B_L_B, 0);
+
+    gpio_set_level(MOTOR_B_R_A, 0);
+    gpio_set_level(MOTOR_B_R_B, 1);
+
+    gpio_set_level(MOTOR_F_L_A, 0);
+    gpio_set_level(MOTOR_F_L_B, 1);
+    
+    gpio_set_level(MOTOR_F_R_A, 1);
+    gpio_set_level(MOTOR_F_R_B, 0);
+    
+    update_speed(PWM_DUTY_CYCLE); 
+}
+
+
 void control_motor_stop() {
-    gpio_set_level(MOTOR_BW_L_A, 0);
-    gpio_set_level(MOTOR_BW_L_B, 0);
-    gpio_set_level(MOTOR_BW_R_A, 0);
-    gpio_set_level(MOTOR_BW_R_B, 0);
-    gpio_set_level(MOTOR_FW_L_A, 0);
-    gpio_set_level(MOTOR_FW_L_B, 0);
-    gpio_set_level(MOTOR_FW_R_A, 0);
-    gpio_set_level(MOTOR_FW_R_B, 0);
+    gpio_set_level(MOTOR_B_L_A, 0);
+    gpio_set_level(MOTOR_B_L_B, 0);
+    gpio_set_level(MOTOR_B_R_A, 0);
+    gpio_set_level(MOTOR_B_R_B, 0);
+    gpio_set_level(MOTOR_F_L_A, 0);
+    gpio_set_level(MOTOR_F_L_B, 0);
+    gpio_set_level(MOTOR_F_R_A, 0);
+    gpio_set_level(MOTOR_F_R_B, 0);
  }
 
