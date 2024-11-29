@@ -1,3 +1,7 @@
 {
-    "cmake.sourceDirectory": "/home/ramy/Desktop/Projects/Sting/sting-central-unit"
+    "cmake.sourceDirectory": "/home/ramy/Desktop/Projects/Sting/sting-central-unit",
+    "idf.adapterTargetName": "esp32s3",
+    "files.associations": {
+        "sdkconfig.h": "c"
+    }
 }

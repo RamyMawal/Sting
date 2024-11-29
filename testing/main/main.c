@@ -5,6 +5,7 @@
 #include "esp_rom_gpio.h"
 #include "motor.h"
 
+#define CONFIG_FREERTOS_HZ 100
 #define GPIO_MOTOR_FORWARD_PIN 5
 #define GPIO_MOTOR_BACKWARD_PIN 6
 
