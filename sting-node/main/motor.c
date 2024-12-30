@@ -67,14 +67,14 @@ void control_direction(int x, int y){
 
 void move_forward()
 {
-    gpio_set_level(MOTOR_B_L_A, 1);
-    gpio_set_level(MOTOR_B_L_B, 0);
+    // gpio_set_level(MOTOR_B_L_A, 1);
+    // gpio_set_level(MOTOR_B_L_B, 0);
 
-    gpio_set_level(MOTOR_B_R_A, 1);
-    gpio_set_level(MOTOR_B_R_B, 0);
+    // gpio_set_level(MOTOR_B_R_A, 1);
+    // gpio_set_level(MOTOR_B_R_B, 0);
 
-    gpio_set_level(MOTOR_F_L_A, 1);
-    gpio_set_level(MOTOR_F_L_B, 0);
+    // gpio_set_level(MOTOR_F_L_A, 1);
+    // gpio_set_level(MOTOR_F_L_B, 0);
 
     gpio_set_level(MOTOR_F_R_A, 1);
     gpio_set_level(MOTOR_F_R_B, 0);

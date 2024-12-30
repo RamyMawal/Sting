@@ -149,59 +149,47 @@ static esp_err_t app_espnow_init(void)
 
 void movement_test(void *pvParameters)
 {
-    move_forward();
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    move_backward();
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    control_motor_stop();
-    vTaskDelay(pdMS_TO_TICKS(100));
-
-    move_right();
-    vTaskDelay(pdMS_TO_TICKS(1000));
-
-    control_motor_stop();
-    vTaskDelay(pdMS_TO_TICKS(100));
-
-    move_left();
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    update_speed(100);
+    while (1)
+    {
+        move_forward();
+    }
 }
 
 void app_main()
 {
-    esp_err_t ret = nvs_flash_init();
-    if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
-    {
-        ESP_ERROR_CHECK(nvs_flash_erase());
-        ret = nvs_flash_init();
-    }
-    ESP_ERROR_CHECK(ret);
+    // esp_err_t ret = nvs_flash_init();
+    // if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
+    // {
+    //     ESP_ERROR_CHECK(nvs_flash_erase());
+    //     ret = nvs_flash_init();
+    // }
+    // ESP_ERROR_CHECK(ret);
 
-    s_esp_now_queue = xQueueCreate(QUEUE_SIZE, sizeof(example_payload_t));
-    if (s_esp_now_queue == NULL)
-    {
-        ESP_LOGE("ESP-NOW", "Failed to create queue!");
-        return;
-    }
+    // s_esp_now_queue = xQueueCreate(QUEUE_SIZE, sizeof(example_payload_t));
+    // if (s_esp_now_queue == NULL)
+    // {
+    //     ESP_LOGE("ESP-NOW", "Failed to create queue!");
+    //     return;
+    // }
 
-    app_wifi_init();
-    app_espnow_init();
+    // app_wifi_init();
+    // app_espnow_init();
 
     setup_motor_gpio();
     setup_mcpwm();
 
-    // xTaskCreate(movement_test,
-    //             "Movement Test",
-    //             STACK_SIZE,
-    //             NULL,
-    //             TASK_PRIORITY_DEFAULT,
-    //             NULL);
-
-    xTaskCreate(process_queue_task,
-                "Process Queue Task",
+    xTaskCreate(movement_test,
+                "Movement Test",
                 STACK_SIZE,
                 NULL,
                 TASK_PRIORITY_DEFAULT,
                 NULL);
+ 
+    // xTaskCreate(process_queue_task,
+                // "Process Queue Task",
+                // STACK_SIZE,
+                // NULL,
+                // TASK_PRIORITY_DEFAULT,
+                // NULL);
 }

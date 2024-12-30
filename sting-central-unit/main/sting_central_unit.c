@@ -71,8 +71,8 @@ static void app_espnow_init(void)
 
 
 
-    // Set primary peer (for unicast communication)
-    esp_now_peer_info_t peer_info = {};
+     esp_now_peer_info_t peer_info = {};
+   
     memcpy(peer_info.peer_addr, s_broadcast_mac, ESP_NOW_ETH_ALEN); // Replace <peer_mac> with actual MAC address
     peer_info.channel = 0;  // Default channel
     peer_info.encrypt = false;
@@ -101,7 +101,7 @@ void task_send(void *pvParameters)
         for (size_t i = 10; i <= 100; i += 5)
         {
             payload->speed_value = i;
-            esp_now_send(NULL, (uint8_t *)payload, sizeof(example_payload_t));
+            esp_now_send(s_broadcast_mac, (uint8_t *)payload, sizeof(example_payload_t));
             printf("Sending speed up ... \n");
             vTaskDelay(pdMS_TO_TICKS(200));
         }
@@ -113,7 +113,7 @@ void task_send(void *pvParameters)
         for (size_t i = 10; i <= 100; i += 5)
         {
             payload->speed_value = i;
-            esp_now_send(NULL, (uint8_t *)payload, sizeof(example_payload_t));
+            esp_now_send(s_broadcast_mac, (uint8_t *)payload, sizeof(example_payload_t));
             printf("Sending slow down... \n");
             vTaskDelay(pdMS_TO_TICKS(200));
         }

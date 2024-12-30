@@ -22,7 +22,6 @@ static uint8_t s_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xF
 typedef enum {
     MOVE_FORWARD_CB,
     MOVE_BACKWARD_CB,
-
 } event_motor_direction;
 
 
