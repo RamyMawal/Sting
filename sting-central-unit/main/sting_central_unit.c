@@ -11,7 +11,6 @@
 #include "esp_now.h"
 #include "esp_random.h"
 #include "esp_crc.h"
-#include <string.h>
 
 #include "sdkconfig.h"
 

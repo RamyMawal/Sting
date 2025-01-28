@@ -55,12 +55,12 @@ void process_queue_task(void *pvParameters)
             {
             case MOVE_FORWARD_CB:
                 move_forward();
-                update_speed((float)message.speed_value);
+                update_speed((float)message.speed_value, (float)message.speed_value);
                 ESP_LOGI("ESP-NOW", "Motor Direction: MOVE_FORWARD");
                 break;
             case MOVE_BACKWARD_CB:
                 move_backward();
-                update_speed((float)message.speed_value);
+                update_speed((float)message.speed_value, (float)message.speed_value);
                 ESP_LOGI("ESP-NOW", "Motor Direction: MOVE_BACKWARD");
                 break;
             default:
@@ -149,10 +149,32 @@ static esp_err_t app_espnow_init(void)
 
 void movement_test(void *pvParameters)
 {
-    update_speed(100);
+    update_speed(50, 50);
     while (1)
     {
-        move_forward();
+        update_direction(0,.5);
+        vTaskDelay(pdMS_TO_TICKS(800));
+
+        control_motor_stop();
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        update_direction(0,-.5);
+        vTaskDelay(pdMS_TO_TICKS(800));
+
+        control_motor_stop();
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        update_direction(.5,0);
+        vTaskDelay(pdMS_TO_TICKS(800));
+
+        control_motor_stop();
+        vTaskDelay(pdMS_TO_TICKS(100));
+
+        update_direction(-.5,0);
+        vTaskDelay(pdMS_TO_TICKS(800));
+
+        control_motor_stop();
+        vTaskDelay(pdMS_TO_TICKS(100));
     }
 }
 
@@ -185,11 +207,11 @@ void app_main()
                 NULL,
                 TASK_PRIORITY_DEFAULT,
                 NULL);
- 
+
     // xTaskCreate(process_queue_task,
-                // "Process Queue Task",
-                // STACK_SIZE,
-                // NULL,
-                // TASK_PRIORITY_DEFAULT,
-                // NULL);
+    // "Process Queue Task",
+    // STACK_SIZE,
+    // NULL,
+    // TASK_PRIORITY_DEFAULT,
+    // NULL);
 }
