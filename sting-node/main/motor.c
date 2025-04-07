@@ -2,16 +2,17 @@
 #include "esp_rom_gpio.h"
 #include "driver/mcpwm.h"
 #include "motor.h"
+#include "math.h"
 
 #define MOTOR_X_A_1 6
-#define MOTOR_X_B_1 7
-#define MOTOR_X_A_2 15
+#define MOTOR_X_B_1 15
+#define MOTOR_X_A_2 7
 #define MOTOR_X_B_2 16
-#define MOTOR_PWM_X 9
+#define MOTOR_PWM_X 5
 
 #define MOTOR_Y_A_1 35
-#define MOTOR_Y_B_1 36
-#define MOTOR_Y_A_2 37
+#define MOTOR_Y_B_1 37
+#define MOTOR_Y_A_2 36
 #define MOTOR_Y_B_2 38
 #define MOTOR_PWM_Y 10
 
@@ -69,14 +70,12 @@ void update_speed(float x_duty_cycle, float y_duty_cycle)
 
 
 /// @brief Update movement direction to a vector of (X,Y)
-/// @param x X vector value, between -1,1 (any value above 1 is reduced to 1)
-/// @param y Y vector value, between -1,1 (any value above 1 is reduced to 1)
+/// @param x X vector value, between -1,1 (clamped to [-1,1])
+/// @param y Y vector value, between -1,1 (clamped to [-1,1])
 void update_direction(float x, float y){
-    //Scale down to [-1,1] range
-    x = x > 1 ? 1 : x;
-    y = y > 1 ? 1 : y;
-    x = x < -1 ? -1 : x;
-    y = y < -1 ? -1 : y;
+    //Clamps down the value to [-1,1]
+    x = fmaxf(fminf(x, 1.0f), -1.0f);
+    y = fmaxf(fminf(y, 1.0f), -1.0f);
 
     float abs_x = x < 0 ? x * -1 : x;
     float abs_y = y < 0 ? y * -1 : y;

@@ -11,6 +11,7 @@
 #include "esp_now.h"
 #include "esp_random.h"
 #include "esp_crc.h"
+#include <string.h>
 
 #include "sdkconfig.h"
 
@@ -68,10 +69,7 @@ static void app_espnow_init(void)
     ESP_ERROR_CHECK(esp_now_register_send_cb(on_data_sent));
     ESP_ERROR_CHECK(esp_now_register_recv_cb(on_data_recv));
 
-
-
-     esp_now_peer_info_t peer_info = {};
-   
+    esp_now_peer_info_t peer_info = {};
     memcpy(peer_info.peer_addr, s_broadcast_mac, ESP_NOW_ETH_ALEN); // Replace <peer_mac> with actual MAC address
     peer_info.channel = 0;  // Default channel
     peer_info.encrypt = false;
@@ -79,27 +77,23 @@ static void app_espnow_init(void)
     if (!esp_now_is_peer_exist(peer_info.peer_addr)) {
         ESP_ERROR_CHECK(esp_now_add_peer(&peer_info));
     }
-
 }
-
-
 
 void task_send(void *pvParameters)
 {
     example_payload_t *payload = malloc(sizeof(example_payload_t));
     
     printf("Initializing task_send \n");
-    
+
     while (1)
     {
         printf("Send iteration started\n");
         
         payload->motor_on = true;
-        payload->event_id = MOVE_FORWARD_CB;
 
         for (size_t i = 10; i <= 100; i += 5)
         {
-            payload->speed_value = i;
+            payload->x_value = i * 0.01;
             esp_now_send(s_broadcast_mac, (uint8_t *)payload, sizeof(example_payload_t));
             printf("Sending speed up ... \n");
             vTaskDelay(pdMS_TO_TICKS(200));
@@ -107,19 +101,15 @@ void task_send(void *pvParameters)
         
         vTaskDelay(pdMS_TO_TICKS(1000));  
 
-        payload->event_id = MOVE_BACKWARD_CB;
-
-        for (size_t i = 10; i <= 100; i += 5)
+        for (size_t i = 100; i >= 10; i -= 5)
         {
-            payload->speed_value = i;
+            payload->x_value = i * 0.01;
             esp_now_send(s_broadcast_mac, (uint8_t *)payload, sizeof(example_payload_t));
             printf("Sending slow down... \n");
             vTaskDelay(pdMS_TO_TICKS(200));
         }
         vTaskDelay(pdMS_TO_TICKS(1000));  
     }
-    
-
 }
 
 void app_main()
