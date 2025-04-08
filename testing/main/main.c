@@ -35,7 +35,7 @@ void process_queue_task(void *pvParameters)
     {
         if (xQueueReceive(s_esp_now_queue, &message, portMAX_DELAY) == pdTRUE)
         {
-            ESP_LOGI(TAG, "Received data with\n x value: %d \n and y value: %d", (int)message.x_value, (int)message.y_value);
+            ESP_LOGI(TAG, "Received data with\n x value: %f \n and y value: %f", message.x_value, message.y_value);
 
             printf("Motor On: %s", message.motor_on ? "Yes" : "No");
 
