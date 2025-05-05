@@ -8,5 +8,5 @@
     "idf.pythonInstallPath": "/usr/bin/python3",
     "idf.espIdfPath": "/home/ramy-mawal/esp/v5.3.2/esp-idf",
     "idf.toolsPath": "/home/ramy-mawal/.espressif",
-    "idf.port": "/dev/ttyACM1"
+    "idf.port": "/dev/ttyACM0"
 }

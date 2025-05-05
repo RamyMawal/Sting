@@ -17,8 +17,3 @@ void update_speed(float x_duty_cycle, float y_duty_cycle);
 void update_direction(float x, float y);
 
 void control_motor_stop();
-
-void move_forward();
-void move_backward();
-void move_right();
-void move_left();

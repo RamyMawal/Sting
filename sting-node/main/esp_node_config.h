@@ -19,16 +19,14 @@
 
 static uint8_t s_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF };
 
-typedef enum {
-    MOVE_FORWARD_CB,
-    MOVE_BACKWARD_CB,
-} event_motor_direction;
-
-
 typedef struct __attribute__((packed))
 {
-    uint32_t speed_value;
-    bool motor_on;
-    event_motor_direction event_id;
-} example_payload_t;
+    int id;
+    float x_value;
+    float y_value;
+    float rot_value;
+    float xt_value;
+    float yt_value;
+} payload_node_t;
+
 
