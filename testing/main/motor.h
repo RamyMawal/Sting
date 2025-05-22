@@ -1,6 +1,5 @@
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
-#include "driver/mcpwm.h"
 
 void setup_motor_gpio();
 
@@ -16,10 +15,13 @@ void update_speed(float x_duty_cycle, float y_duty_cycle);
 /// @param y Y vector value, between -1,1 (any value above 1 is reduced to 1)
 void update_direction(float x, float y);
 
+
+void move_motor(int motor, bool forward, float speed);
+
 void control_motor_stop();
 
-void move_forward();
-void move_backward();
-void move_right();
-void move_left();
+void x_forward();
+void x_backward();
+void y_forward();
+void y_backward();
 

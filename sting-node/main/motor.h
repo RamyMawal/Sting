@@ -16,4 +16,22 @@ void update_speed(float x_duty_cycle, float y_duty_cycle);
 /// @param y Y vector value, between -1,1 (any value above 1 is reduced to 1)
 void update_direction(float x, float y);
 
+
+/// @brief Update motor speed of a specific motor
+/// @param motor 
+/// @param speed 
+void move_motor(int motor, double speed);
+
+/// @brief update PID loop values and move motors
+/// @param x_error 
+/// @param y_error 
+/// @param rot_error 
+void update_pid(float x_error, float y_error, float rot_error);
+
+/// @brief Update movement direction based on error values
+/// @param x_error
+/// @param y_error
+/// @param rot_error
+void update_movement(float x_error, float y_error, float rot_error);
+
 void control_motor_stop();

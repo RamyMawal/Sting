@@ -13,5 +13,6 @@
     "idf.port": "/dev/ttyS0",
     "idf.pythonBinPath": "/home/ramy/.espressif/python_env/idf5.3_py3.10_env/bin/python",
     "idf.toolsPath": "/home/ramy/.espressif",
-    "idf.gitPath": "git"
+    "idf.gitPath": "git",
+    "idf.flashType": "JTAG"
 }

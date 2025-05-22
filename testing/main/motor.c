@@ -1,78 +1,149 @@
 #include "driver/gpio.h"
 #include "esp_rom_gpio.h"
 #include "driver/mcpwm.h"
+#include "esp_log.h"
 #include "motor.h"
 #include <math.h>
 
-// X Motors pin definition
-#define MOTOR_X_1_A 6
-#define MOTOR_X_1_B 7
-#define MOTOR_X_2_A 15
-#define MOTOR_X_2_B 16
-#define MOTOR_PWM_X 5
+#define TAG "MOTORS"
 
-// Y Motors pin definition
-#define MOTOR_Y_1_A 35
-#define MOTOR_Y_1_B 36
-#define MOTOR_Y_2_A 37
-#define MOTOR_Y_2_B 38
-#define MOTOR_PWM_Y 10
+#define MOTOR_1_A 36
+#define MOTOR_1_B 35
+#define MOTOR_1_PWM 5
+#define MOTOR_2_A 7
+#define MOTOR_2_B 6
+#define MOTOR_2_PWM 4
+#define MOTOR_3_A 15
+#define MOTOR_3_B 16
+#define MOTOR_3_PWM 10
+#define MOTOR_4_A 37
+#define MOTOR_4_B 38
+#define MOTOR_4_PWM 11
 
 // PWM Configuration
-#define PWM_FREQUENCY 1000 // 1kHz PWM frequency
-#define PWM_DUTY_CYCLE 50  // 75% duty cycle for speed control
+#define PWM_FREQUENCY 1000    
+#define PWM_DUTY_CYCLE_DEF 50 
+#define PWM_DUTY_CYCLE_MIN 30
+#define PWM_DUTY_CYCLE_MAX 80
 
 void setup_motor_gpio()
 {
+    esp_rom_gpio_pad_select_gpio(MOTOR_1_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_1_B);
+    esp_rom_gpio_pad_select_gpio(MOTOR_2_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_2_B);
+    esp_rom_gpio_pad_select_gpio(MOTOR_3_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_3_B);
+    esp_rom_gpio_pad_select_gpio(MOTOR_4_A);
+    esp_rom_gpio_pad_select_gpio(MOTOR_4_B);
 
-    esp_rom_gpio_pad_select_gpio(MOTOR_X_1_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_X_1_B);
-    esp_rom_gpio_pad_select_gpio(MOTOR_X_2_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_X_2_B);
-    esp_rom_gpio_pad_select_gpio(MOTOR_Y_1_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_Y_1_B);
-    esp_rom_gpio_pad_select_gpio(MOTOR_Y_2_A);
-    esp_rom_gpio_pad_select_gpio(MOTOR_Y_2_B);
-
-    gpio_set_direction(MOTOR_X_1_A, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_X_1_B, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_X_2_A, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_X_2_B, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_Y_1_A, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_Y_1_B, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_Y_2_A, GPIO_MODE_OUTPUT);
-    gpio_set_direction(MOTOR_Y_2_B, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_1_A, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_1_B, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_2_A, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_2_B, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_3_A, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_3_B, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_4_A, GPIO_MODE_OUTPUT);
+    gpio_set_direction(MOTOR_4_B, GPIO_MODE_OUTPUT);
 }
 
 void setup_mcpwm()
 {
-    // Initialize MCPWM on unit 0, timer 0
-    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, MOTOR_PWM_X);
-    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, MOTOR_PWM_Y);
+    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0A, MOTOR_1_PWM);
+    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM0B, MOTOR_2_PWM);
+    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1A, MOTOR_3_PWM);
+    mcpwm_gpio_init(MCPWM_UNIT_0, MCPWM1B, MOTOR_4_PWM);
 
-    mcpwm_config_t pwm_config;
-    pwm_config.frequency = PWM_FREQUENCY; // Set PWM frequency
-    pwm_config.cmpr_a = PWM_DUTY_CYCLE;   // Set duty cycle for PWM0A (0-100%)
-    pwm_config.cmpr_b = PWM_DUTY_CYCLE;   // Set duty cycle for PWM0A (0-100%)
-    pwm_config.counter_mode = MCPWM_UP_COUNTER;
-    pwm_config.duty_mode = MCPWM_DUTY_MODE_0;
-    mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config); // Initialize MCPWM
+    mcpwm_config_t pwm_config_1;
+    pwm_config_1.frequency = PWM_FREQUENCY;   // Set PWM frequency
+    pwm_config_1.cmpr_a = PWM_DUTY_CYCLE_DEF; // Set duty cycle for PWM0A (0-100%)
+    pwm_config_1.cmpr_b = PWM_DUTY_CYCLE_DEF; // Set duty cycle for PWM0A (0-100%)
+    pwm_config_1.counter_mode = MCPWM_UP_COUNTER;
+    pwm_config_1.duty_mode = MCPWM_DUTY_MODE_0;
+
+    mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_0, &pwm_config_1);
+
+    mcpwm_config_t pwm_config_2;
+    pwm_config_2.frequency = PWM_FREQUENCY;   // Set PWM frequency
+    pwm_config_2.cmpr_a = PWM_DUTY_CYCLE_DEF; // Set duty cycle for PWM0A (0-100%)
+    pwm_config_2.cmpr_b = PWM_DUTY_CYCLE_DEF; // Set duty cycle for PWM0A (0-100%)
+    pwm_config_2.counter_mode = MCPWM_UP_COUNTER;
+    pwm_config_2.duty_mode = MCPWM_DUTY_MODE_0;
+
+    mcpwm_init(MCPWM_UNIT_0, MCPWM_TIMER_1, &pwm_config_2);
+
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, 0);
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, 0);
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, 0);
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, 0);
+
 }
 
+void move_motor(int motor, bool forward, float speed)
+{
+    switch (motor)
+    {
+    case 1:
+        gpio_set_level(MOTOR_1_A, forward);
+        gpio_set_level(MOTOR_1_B, !forward);
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, speed);
+        break;
+    case 2:
+        gpio_set_level(MOTOR_2_A, forward);
+        gpio_set_level(MOTOR_2_B, !forward);
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, speed);
+        break;
+    case 3:
+        gpio_set_level(MOTOR_3_A, forward);
+        gpio_set_level(MOTOR_3_B, !forward);
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, speed);
+        break;
+    case 4:
+        gpio_set_level(MOTOR_4_A, forward);
+        gpio_set_level(MOTOR_4_B, !forward);
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, speed);
+        break;
+    default:
+        break;
+    }
+
+}
+
+
 /// @brief Update speed value of (X,Y)
-/// @param x_duty_cycle X duty cycle value, between 0,1 (any out of range is reduced to 1)
-/// @param y_duty_cycle Y duty cycle value, between 0,1 (any out of range 1 is reduced to 1)
+/// @param x_duty_cycle X duty cycle value, between 0,1 (any out of range is set to 1)
+/// @param y_duty_cycle Y duty cycle value, between 0,1 (any out of range is set to 1)
 void update_speed(float x_duty_cycle, float y_duty_cycle)
 {
     x_duty_cycle = fabs(x_duty_cycle);
     y_duty_cycle = fabs(y_duty_cycle);
 
-    // Scale to [0,100] range
-    x_duty_cycle = x_duty_cycle > 1 || x_duty_cycle < 0 ? 100 : x_duty_cycle * 100;
-    y_duty_cycle = y_duty_cycle > 1 || y_duty_cycle < 0 ? 100 : y_duty_cycle * 100;
+    // Clamp to Duty cycle min/max range
+    if(x_duty_cycle > 0.1f)
+        x_duty_cycle = x_duty_cycle < PWM_DUTY_CYCLE_MIN
+                           ? PWM_DUTY_CYCLE_MIN
+                        : x_duty_cycle > PWM_DUTY_CYCLE_MAX
+                           ? PWM_DUTY_CYCLE_MAX
+                           : x_duty_cycle * 100;
+    else 
+        x_duty_cycle = 0;
+
+    if(y_duty_cycle > 0.1f)
+        y_duty_cycle = y_duty_cycle < PWM_DUTY_CYCLE_MIN
+                           ? PWM_DUTY_CYCLE_MIN
+                        : y_duty_cycle > PWM_DUTY_CYCLE_MAX
+                           ? PWM_DUTY_CYCLE_MAX
+                           : y_duty_cycle * 100;
+    else
+        y_duty_cycle = 0;
+
+    ESP_LOGI(TAG, "x_duty_cycle value: %f", x_duty_cycle);
+    ESP_LOGI(TAG, "y_duty_cycle value: %f", y_duty_cycle);
 
     mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, x_duty_cycle);
     mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, y_duty_cycle);
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, x_duty_cycle);
+    mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, y_duty_cycle);
 }
 
 /// @brief Update movement direction to a vector of (X,Y)
@@ -80,60 +151,89 @@ void update_speed(float x_duty_cycle, float y_duty_cycle)
 /// @param y Y vector value, between -1,1 (any value above 1 is reduced to 1)
 void update_direction(float x, float y)
 {
-    // Scale down to [-1,1] range
-    x = x > 1 ? 1 : x;
-    y = y > 1 ? 1 : y;
-    x = x < -1 ? -1 : x;
-    y = y < -1 ? -1 : y;
+    ESP_LOGI(TAG, "x value: %f\n", x);
+    ESP_LOGI(TAG, "y value: %f\n", y);
 
     // Rotate and normalize the vector
-    // Multiplying by 1/sqrt(2) should correct the vector's length
+    x = (x / sqrt(2)) + (y / sqrt(2));
+    y = (-x / sqrt(2)) + (y / sqrt(2));
 
-    x = (x * 1 / sqrt(2)) + (y * 1 / sqrt(2)) * 1 / sqrt(2);
-    y = (x * -1 / sqrt(2)) + (y * 1 / sqrt(2)) * 1 / sqrt(2);
+    ESP_LOGI(TAG, "x norm value: %f\n", x);
+    ESP_LOGI(TAG, "y norm value: %f\n", y);
 
     update_speed(x, y);
 
     if (x > 0)
     {
-        gpio_set_level(MOTOR_X_1_A, 1);
-        gpio_set_level(MOTOR_X_1_B, 0);
-        gpio_set_level(MOTOR_X_2_A, 1);
-        gpio_set_level(MOTOR_X_2_B, 0);
+        gpio_set_level(MOTOR_1_A, 1);
+        gpio_set_level(MOTOR_1_B, 0);
+        gpio_set_level(MOTOR_4_A, 1);
+        gpio_set_level(MOTOR_4_B, 0);
     }
     else
     {
-        gpio_set_level(MOTOR_X_1_A, 0);
-        gpio_set_level(MOTOR_X_1_B, 1);
-        gpio_set_level(MOTOR_X_2_A, 0);
-        gpio_set_level(MOTOR_X_2_B, 1);
+        gpio_set_level(MOTOR_1_A, 0);
+        gpio_set_level(MOTOR_1_B, 1);
+        gpio_set_level(MOTOR_4_A, 0);
+        gpio_set_level(MOTOR_4_B, 1);
     }
 
     if (y > 0)
     {
-        gpio_set_level(MOTOR_Y_1_A, 1);
-        gpio_set_level(MOTOR_Y_1_B, 0);
-        gpio_set_level(MOTOR_Y_2_A, 1);
-        gpio_set_level(MOTOR_Y_2_B, 0);
+        gpio_set_level(MOTOR_2_A, 1);
+        gpio_set_level(MOTOR_2_B, 0);
+        gpio_set_level(MOTOR_3_A, 1);
+        gpio_set_level(MOTOR_3_B, 0);
     }
     else
     {
-        gpio_set_level(MOTOR_Y_1_A, 0);
-        gpio_set_level(MOTOR_Y_1_B, 1);
-        gpio_set_level(MOTOR_Y_2_A, 0);
-        gpio_set_level(MOTOR_Y_2_B, 1);
+        gpio_set_level(MOTOR_2_A, 0);
+        gpio_set_level(MOTOR_2_B, 1);
+        gpio_set_level(MOTOR_3_A, 0);
+        gpio_set_level(MOTOR_3_B, 1);
     }
 }
 
 void control_motor_stop()
 {
-    gpio_set_level(MOTOR_X_1_A, 0);
-    gpio_set_level(MOTOR_X_1_B, 0);
-    gpio_set_level(MOTOR_X_2_A, 0);
-    gpio_set_level(MOTOR_X_2_B, 0);
+    gpio_set_level(MOTOR_1_A, 0);
+    gpio_set_level(MOTOR_1_B, 0);
+    gpio_set_level(MOTOR_4_A, 0);
+    gpio_set_level(MOTOR_4_B, 0);
 
-    gpio_set_level(MOTOR_Y_1_A, 0);
-    gpio_set_level(MOTOR_Y_1_B, 0);
-    gpio_set_level(MOTOR_Y_2_A, 0);
-    gpio_set_level(MOTOR_Y_2_B, 0);
+    gpio_set_level(MOTOR_2_A, 0);
+    gpio_set_level(MOTOR_2_B, 0);
+    gpio_set_level(MOTOR_3_A, 0);
+    gpio_set_level(MOTOR_3_B, 0);
 }
+
+
+void x_forward()
+{
+    gpio_set_level(MOTOR_1_A, 1);
+    gpio_set_level(MOTOR_1_B, 0);
+    gpio_set_level(MOTOR_4_A, 1);
+    gpio_set_level(MOTOR_4_B, 0);
+}
+void x_backward()
+{
+    gpio_set_level(MOTOR_1_A, 0);
+    gpio_set_level(MOTOR_1_B, 1);
+    gpio_set_level(MOTOR_4_A, 0);
+    gpio_set_level(MOTOR_4_B, 1);
+}
+void y_forward()
+{
+    gpio_set_level(MOTOR_2_A, 1);
+    gpio_set_level(MOTOR_2_B, 0);
+    gpio_set_level(MOTOR_3_A, 1);
+    gpio_set_level(MOTOR_3_B, 0);
+}
+void y_backward()
+{
+    gpio_set_level(MOTOR_2_A, 0);
+    gpio_set_level(MOTOR_2_B, 1);
+    gpio_set_level(MOTOR_3_A, 0);
+    gpio_set_level(MOTOR_3_B, 1);
+}
+
