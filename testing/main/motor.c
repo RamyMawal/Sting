@@ -7,18 +7,18 @@
 
 #define TAG "MOTORS"
 
-#define MOTOR_1_A 36
-#define MOTOR_1_B 35
+#define MOTOR_1_A 15
+#define MOTOR_1_B 16
 #define MOTOR_1_PWM 5
-#define MOTOR_2_A 7
-#define MOTOR_2_B 6
-#define MOTOR_2_PWM 4
-#define MOTOR_3_A 15
-#define MOTOR_3_B 16
-#define MOTOR_3_PWM 10
-#define MOTOR_4_A 37
-#define MOTOR_4_B 38
-#define MOTOR_4_PWM 11
+#define MOTOR_2_A 37
+#define MOTOR_2_B 38
+#define MOTOR_2_PWM 11
+#define MOTOR_3_A 7
+#define MOTOR_3_B 6
+#define MOTOR_3_PWM 4
+#define MOTOR_4_A 36
+#define MOTOR_4_B 35
+#define MOTOR_4_PWM 10
 
 // PWM Configuration
 #define PWM_FREQUENCY 1000    
@@ -76,7 +76,6 @@ void setup_mcpwm()
     mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, 0);
     mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, 0);
     mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, 0);
-
 }
 
 void move_motor(int motor, bool forward, float speed)
@@ -84,24 +83,28 @@ void move_motor(int motor, bool forward, float speed)
     switch (motor)
     {
     case 1:
+        ESP_LOGI(TAG, "Motor 1 speed: %f", speed);
         gpio_set_level(MOTOR_1_A, forward);
         gpio_set_level(MOTOR_1_B, !forward);
         mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_A, speed);
         break;
     case 2:
+        ESP_LOGI(TAG, "Motor 2 speed: %f", speed);
         gpio_set_level(MOTOR_2_A, forward);
         gpio_set_level(MOTOR_2_B, !forward);
-        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, speed);
-        break;
-    case 3:
-        gpio_set_level(MOTOR_3_A, forward);
-        gpio_set_level(MOTOR_3_B, !forward);
         mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_0, MCPWM_OPR_B, speed);
         break;
+    case 3:
+        ESP_LOGI(TAG, "Motor 3 speed: %f", speed);
+        gpio_set_level(MOTOR_3_A, forward);
+        gpio_set_level(MOTOR_3_B, !forward);
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, speed);
+        break;
     case 4:
+        ESP_LOGI(TAG, "Motor 4 speed: %f", speed);
         gpio_set_level(MOTOR_4_A, forward);
         gpio_set_level(MOTOR_4_B, !forward);
-        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_A, speed);
+        mcpwm_set_duty(MCPWM_UNIT_0, MCPWM_TIMER_1, MCPWM_OPR_B, speed);
         break;
     default:
         break;
@@ -120,19 +123,19 @@ void update_speed(float x_duty_cycle, float y_duty_cycle)
 
     // Clamp to Duty cycle min/max range
     if(x_duty_cycle > 0.1f)
-        x_duty_cycle = x_duty_cycle < PWM_DUTY_CYCLE_MIN
-                           ? PWM_DUTY_CYCLE_MIN
-                        : x_duty_cycle > PWM_DUTY_CYCLE_MAX
-                           ? PWM_DUTY_CYCLE_MAX
+        x_duty_cycle = x_duty_cycle < PWM_DUTY_MIN
+                           ? PWM_DUTY_MIN
+                        : x_duty_cycle > PWM_DUTY_MAX
+                           ? PWM_DUTY_MAX
                            : x_duty_cycle * 100;
     else 
         x_duty_cycle = 0;
 
     if(y_duty_cycle > 0.1f)
-        y_duty_cycle = y_duty_cycle < PWM_DUTY_CYCLE_MIN
-                           ? PWM_DUTY_CYCLE_MIN
-                        : y_duty_cycle > PWM_DUTY_CYCLE_MAX
-                           ? PWM_DUTY_CYCLE_MAX
+        y_duty_cycle = y_duty_cycle < PWM_DUTY_MIN
+                           ? PWM_DUTY_MIN
+                        : y_duty_cycle > PWM_DUTY_MAX
+                           ? PWM_DUTY_MAX
                            : y_duty_cycle * 100;
     else
         y_duty_cycle = 0;

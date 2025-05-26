@@ -102,20 +102,20 @@ void uart_receive_task(void *arg)
             // End of message: terminate and parse
             line[idx] = '\0';
             //Data format: "12.34,56.78,1.57,20.00,30.00\n"
-            float x, y, rot, xt, yt;
+            float x, y, yaw, xt, yt;
             int id;
-            int ret = sscanf(line, "%d,%f,%f,%f,%f,%f",&id, &x, &y, &rot, &xt, &yt);
+            int ret = sscanf(line, "%d,%f,%f,%f,%f,%f",&id, &x, &y, &yaw, &xt, &yt);
             if (ret == 6) {
                 ESP_LOGI(TAG,
-                         "Received block:id=%d x=%.3f, y=%.3f, rot=%.3f, xt=%.3f, yt=%.3f",
-                         id, x, y, rot, xt, yt);
+                         "Received block:id=%d x=%.3f, y=%.3f, yaw=%.3f, xt=%.3f, yt=%.3f",
+                         id, x, y, yaw, xt, yt);
 
                 // Send data to ESP-NOW
                 payload_node_t payload;
                 payload.id = id;
                 payload.x_value = x;
                 payload.y_value = y;
-                payload.rot_value = rot;
+                payload.yaw_value = yaw;
                 payload.xt_value = xt;
                 payload.yt_value = yt;
                 ESP_LOGI(TAG, "Sending data to ESP-NOW");

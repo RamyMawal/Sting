@@ -24,7 +24,7 @@ typedef struct __attribute__((packed))
     int id;
     float x_value;
     float y_value;
-    float rot_value;
+    float yaw_value;
     float xt_value;
     float yt_value;
 } payload_node_t;

@@ -3,7 +3,10 @@
     "idf.adapterTargetName": "esp32s3",
     "files.associations": {
         "sdkconfig.h": "c",
-        "esp_node_config.h": "c"
+        "esp_node_config.h": "c",
+        "motor.h": "c",
+        "math.h": "c",
+        "cdefs.h": "c"
     },
     "idf.pythonInstallPath": "/usr/bin/python3",
     "idf.espIdfPath": "/home/ramy-mawal/esp/v5.3.2/esp-idf",

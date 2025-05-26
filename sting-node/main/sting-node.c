@@ -36,12 +36,13 @@ void process_queue_task(void *pvParameters)
     {
         if (xQueueReceive(s_esp_now_queue, &message, portMAX_DELAY) == pdTRUE)
         {
-            ESP_LOGI(TAG, "Received block: id=%d x=%.3f, y=%.3f, rot=%.3f, xt=%.3f, yt=%.3f",
+            ESP_LOGI(TAG, "Received block: id=%d x=%.3f, y=%.3f, yaw=%.3f, xt=%.3f, yt=%.3f",
                      message->id,
-                     message->x_value, message->y_value, message->rot_value,
+                     message->x_value, message->y_value, message->yaw_value,
                      message->xt_value, message->yt_value);
+
             if(message->id == ID)
-                update_movement(message->xt_value - message->x_value,
+                update_pid(message->xt_value - message->x_value,
                              message->yt_value - message->y_value,
                              0);
                     
