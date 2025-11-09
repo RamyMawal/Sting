@@ -21,6 +21,7 @@ static uint8_t s_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xF
 
 typedef struct __attribute__((packed))
 {
+    int move;
     int id;
     float x_value;
     float y_value;

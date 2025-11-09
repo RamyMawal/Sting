@@ -23,7 +23,8 @@
 #define TASK_PRIORITY_DEFAULT 5
 #define CONFIG_FREERTOS_HZ 100
 
-#define ID 1
+// Update this according to the robot ID
+#define ID 3
 
 QueueHandle_t s_esp_now_queue;
 
@@ -36,16 +37,18 @@ void process_queue_task(void *pvParameters)
     {
         if (xQueueReceive(s_esp_now_queue, &message, portMAX_DELAY) == pdTRUE)
         {
-            ESP_LOGI(TAG, "Received block: id=%d x=%.3f, y=%.3f, yaw=%.3f, xt=%.3f, yt=%.3f",
-                     message->id,
+            ESP_LOGI(TAG, "Received block: move=%d id=%d x=%.3f, y=%.3f, yaw=%.3f, xt=%.3f, yt=%.3f",
+                     message->move, message->id,
                      message->x_value, message->y_value, message->yaw_value,
                      message->xt_value, message->yt_value);
 
-            if(message->id == ID)
-                update_pid(message->xt_value - message->x_value,
-                             message->yt_value - message->y_value,
-                             0);
-                    
+            if (message->id == ID)
+                message->move == 0 
+                  ? control_motor_stop() 
+                  :  update_movement(message->xt_value - message->x_value,
+                                     message->yt_value - message->y_value,
+                                     0 - message->yaw_value);
+
             // Free the memory allocated in the callback
             free(message);
         }
@@ -76,10 +79,10 @@ static void on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status)
 static void on_data_recv(const esp_now_recv_info_t *esp_now_info, const uint8_t *data, int len)
 {
     // Log the source MAC instead of destination
-    // ESP_LOGI("ESP-NOW", "Received data from MAC %02x:%02x:%02x:%02x:%02x:%02x, Length: %d",
-    //          esp_now_info->src_addr[0], esp_now_info->src_addr[1], esp_now_info->src_addr[2],
-    //          esp_now_info->src_addr[3], esp_now_info->src_addr[4], esp_now_info->src_addr[5],
-    //          len);
+    ESP_LOGI("ESP-NOW", "Received data from MAC %02x:%02x:%02x:%02x:%02x:%02x, Length: %d",
+             esp_now_info->src_addr[0], esp_now_info->src_addr[1], esp_now_info->src_addr[2],
+             esp_now_info->src_addr[3], esp_now_info->src_addr[4], esp_now_info->src_addr[5],
+             len);
 
     // Ensure there is enough data to fill the payload structure
     if (len < sizeof(payload_node_t))
@@ -139,7 +142,6 @@ static esp_err_t app_espnow_init(void)
     // }
 }
 
-
 void app_main()
 {
     esp_err_t ret = nvs_flash_init();
@@ -171,9 +173,9 @@ void app_main()
     //             NULL);
 
     xTaskCreate(process_queue_task,
-    "Process Queue Task",
-    STACK_SIZE,
-    NULL,
-    TASK_PRIORITY_DEFAULT,
-    NULL);
+                "Process Queue Task",
+                STACK_SIZE,
+                NULL,
+                TASK_PRIORITY_DEFAULT,
+                NULL);
 }

@@ -16,7 +16,7 @@ void update_speed(float x_duty_cycle, float y_duty_cycle);
 void update_direction(float x, float y);
 
 
-void move_motor(int motor, bool forward, float speed);
+void move_motor(int motor, double speed);
 
 void control_motor_stop();
 
