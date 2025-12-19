@@ -34,4 +34,11 @@ void update_pid(float x_error, float y_error, float rot_error);
 /// @param rot_error
 void update_movement(float x_error, float y_error, float rot_error);
 
+/// @brief update PID loop values and move motors
+/// @param x_error
+/// @param y_error
+/// @param yaw_error
+void update_pid(float x_error, float y_error, float yaw_error);
+
+
 void control_motor_stop();

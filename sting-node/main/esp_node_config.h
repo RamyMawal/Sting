@@ -1,5 +1,4 @@
 #ifndef ESPNOW_BASIC_CONFIG_H
-#endif
 #define ESPNOW_BASIC_CONFIG_H
 
 #include <inttypes.h>
@@ -21,13 +20,15 @@ static uint8_t s_broadcast_mac[ESP_NOW_ETH_ALEN] = { 0xFF, 0xFF, 0xFF, 0xFF, 0xF
 
 typedef struct __attribute__((packed))
 {
-    int move;
-    int id;
-    float x_value;
-    float y_value;
-    float yaw_value;
-    float xt_value;
-    float yt_value;
+  int move;
+  int id;
+  float x_value;
+  float y_value;
+  float yaw_value;
+  float xt_value;
+  float yt_value;
 } payload_node_t;
+
+#endif  // ESPNOW_BASIC_CONFIG_H
 
 

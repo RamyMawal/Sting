@@ -18,10 +18,11 @@
 
 #define UART_PORT        UART_NUM_0
 #define BUF_SIZE         265     // Enough for a line of text
+#define UART_EVENT_QUEUE_SIZE 20
 
 static const char *TAG = "MASTER_UNIT";
 
-QueueHandle_t test_queue;
+static QueueHandle_t uart_event_queue = NULL;
 
 
 #define CONFIG_FREERTOS_HZ 100
@@ -102,62 +103,165 @@ void uart_receive_task(void *arg)
 {
   char line[BUF_SIZE];
   int idx = 0;
-  uint8_t byte;
+  uart_event_t event;
+  bool overflow_state = false;
+  int overflow_count = 0;
 
-  while (1) 
+  // Error statistics
+  uint32_t frame_errors = 0;
+  uint32_t parity_errors = 0;
+  uint32_t buffer_overflows = 0;
+  uint32_t fifo_overflows = 0;
+  uint32_t event_counter = 0;
+
+  while (1)
   {
-    // Block until we get a single byte
-    int len = uart_read_bytes(UART_PORT, &byte, 1, portMAX_DELAY);
-    if (len <= 0) {
-      ESP_LOGI(TAG, "No data received");
-      continue;
-    }
+    // Wait for UART event (blocking)
+    if (xQueueReceive(uart_event_queue, &event, portMAX_DELAY)) {
 
-    // If it's not newline, append (if space)
-    if (byte != '\n' && idx < (BUF_SIZE - 1)) {
-      line[idx++] = (char)byte;
-    } else 
-  {
-      // End of message: terminate and parse
-      line[idx] = '\0';
-      //Data format: "12.34,56.78,1.57,20.00,30.00\n"
-      float x, y, yaw, xt, yt;
-      int move,id;
-      int ret = sscanf(line, "%d,%d,%f,%f,%f,%f,%f",&move,&id, &x, &y, &yaw, &xt, &yt);
-      if (ret == 7) {
-        ESP_LOGI(TAG,
-                 "Received block:move=%d, id=%d, x=%.3f, y=%.3f, yaw=%.3f, xt=%.3f, yt=%.3f",
-                 move,id, x, y, yaw, xt, yt);
+      switch (event.type) {
+        case UART_DATA:
+          // Normal case: data available to read
+          {
+            uint8_t byte;
+            int len = uart_read_bytes(UART_PORT, &byte, 1, pdMS_TO_TICKS(100));
 
-        // Send data to ESP-NOW
-        payload_node_t payload;
-        payload.move = move;
-        payload.id = id;
-        payload.x_value = x;
-        payload.y_value = y;
-        payload.yaw_value = yaw;
-        payload.xt_value = xt;
-        payload.yt_value = yt;
-        ESP_LOGI(TAG, "Sending data to ESP-NOW");
-        if (id >= 0 && id < 4) {
-          ESP_LOGI(TAG, "Sending to Node %d (%02X:%02X:%02X:%02X:%02X:%02X)",
-                   id,
-                   peer_macs[id][0], peer_macs[id][1], peer_macs[id][2],
-                   peer_macs[id][3], peer_macs[id][4], peer_macs[id][5]);
+            if (len < 0) {
+              ESP_LOGE(TAG, "UART read failed after DATA event");
+              continue;
+            } else if (len == 0) {
+              // Timeout - event was spurious or data already consumed
+              continue;
+            }
 
-          esp_err_t result = esp_now_send(peer_macs[id], (uint8_t *)&payload, sizeof(payload_node_t));
-          if (result != ESP_OK) {
-            ESP_LOGE(TAG, "Failed to send to Node %d (err=%d)", id, result);
+            // Check for newline - this always resets state
+            if (byte == '\n') {
+              if (overflow_state) {
+                // We were in overflow - report and reset
+                ESP_LOGW(TAG, "Buffer overflow: Discarded %d bytes (max line length: %d)",
+                         overflow_count, BUF_SIZE - 1);
+                overflow_state = false;
+                overflow_count = 0;
+                idx = 0;
+                continue;  // Don't process this corrupted message
+              }
+
+              // Normal newline - process the complete line
+              line[idx] = '\0';
+
+              // Parse the CSV format: move,id,x,y,yaw,xt,yt
+              float x, y, yaw, xt, yt;
+              int move, id;
+              int ret = sscanf(line, "%d,%d,%f,%f,%f,%f,%f", &move, &id, &x, &y, &yaw, &xt, &yt);
+
+              if (ret == 7) {
+                ESP_LOGI(TAG, "Received: move=%d, id=%d, x=%.3f, y=%.3f, yaw=%.3f, xt=%.3f, yt=%.3f",
+                         move, id, x, y, yaw, xt, yt);
+
+                // Build payload and send
+                payload_node_t payload = {
+                  .move = move,
+                  .id = id,
+                  .x_value = x,
+                  .y_value = y,
+                  .yaw_value = yaw,
+                  .xt_value = xt,
+                  .yt_value = yt
+                };
+
+                if (id >= 0 && id < 4) {
+                  ESP_LOGI(TAG, "Sending to Node %d (%02X:%02X:%02X:%02X:%02X:%02X)",
+                           id,
+                           peer_macs[id][0], peer_macs[id][1], peer_macs[id][2],
+                           peer_macs[id][3], peer_macs[id][4], peer_macs[id][5]);
+
+                  esp_err_t result = esp_now_send(peer_macs[id], (uint8_t *)&payload, sizeof(payload));
+                  if (result != ESP_OK) {
+                    ESP_LOGE(TAG, "ESP-NOW send failed to Node %d: %d", id, result);
+                  }
+                } else {
+                  ESP_LOGW(TAG, "Invalid robot ID: %d (valid range: 0-3)", id);
+                }
+              } else {
+                ESP_LOGW(TAG, "Parse failed (%d/7 fields): \"%s\"", ret, line);
+              }
+
+              // Reset for next message
+              idx = 0;
+              continue;
+            }
+
+            // Not a newline - check if we have space
+            if (idx < (BUF_SIZE - 1)) {
+              // Normal case: room in buffer
+              line[idx++] = (char)byte;
+            } else {
+              // Buffer full - enter overflow state
+              if (!overflow_state) {
+                // First overflow byte
+                ESP_LOGW(TAG, "Buffer overflow detected - discarding bytes until newline");
+                overflow_state = true;
+                overflow_count = 0;
+              }
+              overflow_count++;
+            }
           }
-        } else {
-          ESP_LOGW(TAG, "Invalid ID %d, skipping send", id);
-        }
-      } else {
-        ESP_LOGW(TAG, "Failed to parse line (%d fields): \"%s\"", ret, line);
+          break;
+
+        case UART_FIFO_OVF:
+          // Hardware FIFO overflow - data arriving too fast
+          fifo_overflows++;
+          ESP_LOGW(TAG, "UART FIFO overflow (total: %lu) - flushing", fifo_overflows);
+          uart_flush_input(UART_PORT);
+          xQueueReset(uart_event_queue);
+          idx = 0;
+          overflow_state = false;
+          break;
+
+        case UART_BUFFER_FULL:
+          // Ring buffer overflow - task not processing fast enough
+          buffer_overflows++;
+          ESP_LOGW(TAG, "UART ring buffer overflow (total: %lu) - flushing", buffer_overflows);
+          uart_flush_input(UART_PORT);
+          xQueueReset(uart_event_queue);
+          idx = 0;
+          overflow_state = false;
+          break;
+
+        case UART_BREAK:
+          // Break signal detected
+          ESP_LOGI(TAG, "UART break signal detected");
+          idx = 0;
+          overflow_state = false;
+          break;
+
+        case UART_PARITY_ERR:
+          // Parity error - electrical noise or wrong config
+          parity_errors++;
+          ESP_LOGE(TAG, "UART parity error (total: %lu) - check wiring", parity_errors);
+          break;
+
+        case UART_FRAME_ERR:
+          // Framing error - baud rate mismatch or noise
+          frame_errors++;
+          ESP_LOGE(TAG, "UART framing error (total: %lu) - check baud rate", frame_errors);
+          break;
+
+        case UART_PATTERN_DET:
+          // Pattern detection (not used)
+          ESP_LOGI(TAG, "UART pattern detected");
+          break;
+
+        default:
+          ESP_LOGW(TAG, "Unknown UART event type: %d", event.type);
+          break;
       }
 
-      // Reset for next message
-      idx = 0;
+      // Periodic diagnostics (every 1000 events)
+      if (++event_counter % 1000 == 0) {
+        ESP_LOGI(TAG, "UART Stats - Frame:%lu Parity:%lu BufferOvf:%lu FifoOvf:%lu",
+                 frame_errors, parity_errors, buffer_overflows, fifo_overflows);
+      }
     }
   }
 }
@@ -227,7 +331,8 @@ static void app_uart_init()
     .data_bits = UART_DATA_8_BITS,
     .parity    = UART_PARITY_DISABLE,
     .stop_bits = UART_STOP_BITS_1,
-    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE
+    .flow_ctrl = UART_HW_FLOWCTRL_DISABLE,
+    .source_clk = UART_SCLK_DEFAULT,
   };
   ESP_ERROR_CHECK(uart_param_config(UART_PORT, &uart_config));
 
@@ -238,14 +343,16 @@ static void app_uart_init()
                                UART_PIN_NO_CHANGE,
                                UART_PIN_NO_CHANGE));
 
-  // 3. Install driver: RX buffer only
+  // 3. Install driver with event queue for error monitoring
   ESP_ERROR_CHECK(uart_driver_install(
     UART_PORT,
-    BUF_SIZE * 2,   // RX buffer size
-    0,              // TX buffer (unused here)
-    0, NULL, 0));
+    BUF_SIZE * 2,           // RX buffer size (530 bytes)
+    BUF_SIZE * 2,           // TX buffer size (enable for diagnostics)
+    UART_EVENT_QUEUE_SIZE,  // Event queue size
+    &uart_event_queue,      // Event queue handle
+    0));
 
-  // 4. Start the receive task
+  ESP_LOGI(TAG, "UART initialized with event queue monitoring");
 }
 
 void app_main()

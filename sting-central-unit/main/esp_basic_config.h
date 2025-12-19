@@ -1,5 +1,4 @@
 #ifndef ESPNOW_BASIC_CONFIG_H
-#endif
 #define ESPNOW_BASIC_CONFIG_H
 
 #include <inttypes.h>
@@ -29,3 +28,5 @@ typedef struct __attribute__((packed))
     float xt_value;
     float yt_value;
 } payload_node_t;
+
+#endif  // ESPNOW_BASIC_CONFIG_H
