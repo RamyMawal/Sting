@@ -6,7 +6,6 @@
 
 #define TX_BROADCAST_MAC {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
 
-#define ESPNOW_PMK "pmk123123"
 #define ESPNOW_CHANNEL 1
 #define ESPNOW_QUEUE_SIZE 8
 

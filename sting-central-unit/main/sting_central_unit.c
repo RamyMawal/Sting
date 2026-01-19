@@ -13,6 +13,7 @@
 #include "esp_system.h"
 #include "driver/uart.h"
 #include <string.h>
+#include <math.h>
 #include "sdkconfig.h"
 #include "esp_basic_config.h"
 
@@ -49,8 +50,8 @@ static void on_data_sent(const uint8_t *mac_addr, esp_now_send_status_t status) 
 
 static void on_data_recv(const esp_now_recv_info_t * esp_now_info, const uint8_t *data, int len) {
   ESP_LOGI(TAG, "Received data from MAC %02x:%02x:%02x:%02x:%02x:%02x, Length: %d",
-           esp_now_info->des_addr[0], esp_now_info->des_addr[1], esp_now_info->des_addr[2],
-           esp_now_info->des_addr[3], esp_now_info->des_addr[4], esp_now_info->des_addr[5],
+           esp_now_info->src_addr[0], esp_now_info->src_addr[1], esp_now_info->src_addr[2],
+           esp_now_info->src_addr[3], esp_now_info->src_addr[4], esp_now_info->src_addr[5],
            len);
 
 
@@ -82,7 +83,7 @@ static void app_espnow_init(void)
 
 
   esp_now_peer_info_t peer_info = {
-    .channel = 0,
+    .channel = ESPNOW_CHANNEL,
     .encrypt = false
   };
 
@@ -157,6 +158,21 @@ void uart_receive_task(void *arg)
               if (ret == 7) {
                 ESP_LOGI(TAG, "Received: move=%d, id=%d, x=%.3f, y=%.3f, yaw=%.3f, xt=%.3f, yt=%.3f",
                          move, id, x, y, yaw, xt, yt);
+
+                // Validate position ranges
+                if (fabsf(x) > MAX_POSITION || fabsf(y) > MAX_POSITION ||
+                    fabsf(xt) > MAX_POSITION || fabsf(yt) > MAX_POSITION) {
+                  ESP_LOGW(TAG, "Position values out of range (max=%.1f), ignoring message", MAX_POSITION);
+                  idx = 0;
+                  continue;
+                }
+
+                // Validate yaw range
+                if (fabsf(yaw) > MAX_YAW) {
+                  ESP_LOGW(TAG, "Yaw value %.3f out of range (max=%.2f), ignoring message", yaw, MAX_YAW);
+                  idx = 0;
+                  continue;
+                }
 
                 // Build payload and send
                 payload_node_t payload = {
@@ -266,6 +282,7 @@ void uart_receive_task(void *arg)
   }
 }
 
+#ifdef ENABLE_TEST_TASK
 void task_send(void *pvParameters)
 {
   payload_node_t *payload = malloc(sizeof(payload_node_t));
@@ -290,7 +307,7 @@ void task_send(void *pvParameters)
       ESP_LOGI(TAG, "Sending speed up ...");
       vTaskDelay(pdMS_TO_TICKS(200));
     }
-    vTaskDelay(pdMS_TO_TICKS(1000));  
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     for (size_t i = 0; i <= 100; i += 5)
     {
@@ -300,7 +317,7 @@ void task_send(void *pvParameters)
       vTaskDelay(pdMS_TO_TICKS(200));
     }
 
-    vTaskDelay(pdMS_TO_TICKS(1000));  
+    vTaskDelay(pdMS_TO_TICKS(1000));
 
     for (size_t i = 100; i > 0; i -= 5)
     {
@@ -322,6 +339,7 @@ void task_send(void *pvParameters)
     vTaskDelay(pdMS_TO_TICKS(1000));
   }
 }
+#endif  // ENABLE_TEST_TASK
 
 static void app_uart_init()
 {
